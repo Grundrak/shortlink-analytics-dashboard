@@ -1,0 +1,54 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DB_URI")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  email          String   @unique
+  password       String
+  name           String
+  role           Role     @default(USER)
+  subscription    Subscription @default(FREE)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  urls           Url[]
+}
+
+model Url {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  shortCode      String   @unique
+  originalUrl    String
+  customAlias    String?  @unique
+  owner          User     @relation(fields: [ownerId], references: [id])
+  ownerId        String   @db.ObjectId
+  createdAt      DateTime @default(now())
+  analytics      Analytics[]
+}
+
+model Analytics {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  url            Url      @relation(fields: [urlId], references: [id])
+  urlId          String   @db.ObjectId
+  clickedAt      DateTime @default(now())
+  ipAddress      String
+  device         String
+  browser        String
+  operatingSystem String
+  referrer       String
+  location       String
+}
+
+enum Subscription {
+  FREE
+  PREMIUM
+}
