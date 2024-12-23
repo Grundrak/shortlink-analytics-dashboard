@@ -77,7 +77,6 @@ The **ShortLink Analytics Dashboard** is a comprehensive web-based application d
 
 ## Architecture
 
-![Architecture Diagram](https://via.placeholder.com/800x400) <!-- Replace with actual diagram -->
 
 The application follows a **Modular MVC** architecture, separating concerns across different layers:
 
@@ -93,7 +92,7 @@ The application follows a **Modular MVC** architecture, separating concerns acro
 - **npm** 
 - **MongoDB Atlas** account for database hosting
 - **Git** for version control
-- *(Frontend prerequisites if applicable)*
+
 
 ### Backend Setup
 

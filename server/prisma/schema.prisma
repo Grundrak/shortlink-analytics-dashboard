@@ -25,13 +25,14 @@ model User {
 }
 
 model Url {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  shortCode      String   @unique
+  id             String      @id @default(auto()) @map("_id") @db.ObjectId
+  shortCode      String      @unique
   originalUrl    String
-  customAlias    String?  @unique
-  owner          User     @relation(fields: [ownerId], references: [id])
-  ownerId        String   @db.ObjectId
-  createdAt      DateTime @default(now())
+  customAlias    String?     @unique
+  owner          User        @relation(fields: [ownerId], references: [id])
+  ownerId        String      @db.ObjectId
+  clicks         Int         @default(0)
+  createdAt      DateTime    @default(now())
   analytics      Analytics[]
 }
 

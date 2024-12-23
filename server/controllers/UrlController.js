@@ -8,6 +8,7 @@ class UrlController {
   async createShortLink(req, res, next) {
     try {
       const { originalUrl, customAlias } = req.body;
+
       if (!originalUrl) {
         throw new AppError('Please provide a URL', 400);
       }
@@ -19,31 +20,54 @@ class UrlController {
         throw new AppError('Invalid URL format', 400);
       }
 
-      const shortCode = customAlias || shortid.generate();
+      let shortCode;
 
-      // Check for existing shortCode
-      const existingUrl = await prisma.url.findFirst({
-        where: {
-          OR: [{ shortCode }, { customAlias: shortCode }],
+      if (customAlias) {
+        shortCode = customAlias;
+
+        // Check if customAlias already exists
+        const existingCustomAlias = await prisma.url.findUnique({
+          where: { customAlias },
+        });
+
+        if (existingCustomAlias) {
+          throw new AppError('This custom alias already exists. Please choose another one.', 409);
+        }
+      } else {
+        // Generate a unique shortCode
+        shortCode = shortid.generate();
+
+        // Ensure the generated shortCode is unique
+        let existingShortCode = await prisma.url.findUnique({
+          where: { shortCode },
+        });
+
+        while (existingShortCode) {
+          shortCode = shortid.generate();
+          existingShortCode = await prisma.url.findUnique({
+            where: { shortCode },
+          });
+        }
+      }
+
+      // Prepare the data object conditionally
+      const data = {
+        originalUrl,
+        shortCode,
+        owner: {
+          connect: { id: req.user.id }
         },
-      });
+        clicks: 0,
+      };
 
-      if (existingUrl) {
-        throw new AppError('This short code already exists for another URL', 409);
+      // Only set customAlias if provided
+      if (customAlias) {
+        data.customAlias = customAlias;
       }
 
       // Create short URL
       const url = await prisma.url.create({
-        data: {
-          originalUrl,
-          shortCode,
-          customAlias,
-          userId: req.user.id, // Assuming user ID is stored in req.user
-          clicks: 0,
-          owner: {
-            connect: { id: req.user.id } // Connect the URL to the user
-          }
-        },
+        data,
       });
 
       logger.info(`New short URL created: ${shortCode} for ${originalUrl}`);
@@ -78,7 +102,7 @@ class UrlController {
       // Increment click count
       await prisma.url.update({
         where: { id: url.id },
-        data: { click: { increment: 1 } },
+        data: { clicks: { increment: 1 } },
       });
 
       res.redirect(url.originalUrl);
