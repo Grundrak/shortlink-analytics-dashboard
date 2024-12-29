@@ -3,11 +3,11 @@ const prisma = new PrismaClient();
 
 const getUrlAnalytics = async (req, res) => {
   const { urlId } = req.params;
-  const userId = req.user.id;
+  const userId = req.user._id;
   
   try {
     const url = await prisma.url.findUnique({
-      where: { id: urlId },
+      where: { _id: urlId },
       include: { analytics: true }
     });
 

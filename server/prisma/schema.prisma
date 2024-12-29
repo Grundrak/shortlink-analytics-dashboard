@@ -18,7 +18,7 @@ model User {
   password       String
   name           String
   role           Role     @default(USER)
-  subscription    Subscription @default(FREE)
+  subscription   Subscription @default(FREE)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   urls           Url[]
@@ -28,7 +28,7 @@ model Url {
   id             String      @id @default(auto()) @map("_id") @db.ObjectId
   shortCode      String      @unique
   originalUrl    String
-  customAlias    String?     @unique
+  customAlias    String?     @unique  // Keep only this @unique constraint
   owner          User        @relation(fields: [ownerId], references: [id])
   ownerId        String      @db.ObjectId
   clicks         Int         @default(0)
