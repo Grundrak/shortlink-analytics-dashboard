@@ -3,6 +3,7 @@ const { PrismaClient, Prisma } = require("@prisma/client");
 const prisma = new PrismaClient();
 const logger = require("../utils/logger");
 const { AppError } = require("../middleware/errorHandler");
+const { visitorInfos } = require("../utils/visitorInfo");
 
 class UrlController {
   async createShortLink(req, res, next) {
@@ -32,9 +33,9 @@ class UrlController {
         // Check for existing customAlias
         if (sanitizedCustomAlias) {
           const existing = await tx.url.findFirst({
-            where: { customAlias: sanitizedCustomAlias }
+            where: { customAlias: sanitizedCustomAlias },
           });
-          
+
           if (existing) {
             throw new AppError("Custom alias already in use", 409);
           }
@@ -48,12 +49,12 @@ class UrlController {
         do {
           shortCode = shortid.generate();
           const existingCode = await tx.url.findFirst({
-            where: { shortCode }
+            where: { shortCode },
           });
-          
+
           if (!existingCode) break;
           attempts++;
-          
+
           if (attempts >= maxAttempts) {
             throw new AppError("Unable to generate unique short code", 500);
           }
@@ -66,10 +67,10 @@ class UrlController {
             shortCode,
             customAlias: sanitizedCustomAlias,
             owner: {
-              connect: { id: req.user.id }
+              connect: { id: req.user.id },
             },
-            clicks: 0
-          }
+            clicks: 0,
+          },
         });
       });
 
@@ -84,16 +85,15 @@ class UrlController {
           customAlias: url.customAlias,
         },
       });
-
     } catch (error) {
       logger.error(`Error creating short link: ${error.message}`, { error });
-      
+
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') {
+        if (error.code === "P2002") {
           return next(new AppError("Custom alias already in use", 409));
         }
       }
-      
+
       next(error);
     }
   }
@@ -183,13 +183,38 @@ const redirectShortUrl = async (req, res, next) => {
     if (!url) {
       return res.status(404).json({ message: "URL not found" });
     }
-    // Optionally capture analytics here or via middleware
+
+    const visitorInfo = visitorInfos(req);
+    console.log('Collected Visitor Info:', visitorInfo);
+
+    // Create analytics entry
+    await prisma.analytics.create({
+      data: {
+        url: {
+          connect: { id: url.id },
+        },
+        ipAddress: visitorInfo.ipAddress,
+        device: visitorInfo.device,
+        browser: visitorInfo.browser,
+        operatingSystem: visitorInfo.operatingSystem,
+        referrer: visitorInfo.referrer,
+        location: visitorInfo.location,
+      },
+    });
+
+    // Update click count
+    await prisma.url.update({
+      where: { id: url.id },
+      data: { clicks: { increment: 1 } },
+    });
+
+    // Redirect user
     res.redirect(url.originalUrl);
   } catch (error) {
+    console.error('Error in redirectShortUrl:', error);
     next(error);
   }
 };
-
 module.exports = {
   createShortLink: new UrlController().createShortLink,
   getUrl: new UrlController().getUrl,
