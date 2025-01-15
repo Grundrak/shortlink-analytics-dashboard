@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useAuthStore } from '../../store/authStore';
+import { useAuthStore } from '../../stores/authStore';
 import { Link as LinkIcon, BarChart, Settings, LogOut } from 'lucide-react';
 
 export function Header() {

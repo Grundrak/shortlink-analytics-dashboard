@@ -2,8 +2,8 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  plan: 'FREE' | 'PREMIUM';
-  createdAt: string;
+  role: "USER" | "ADMIN";
+  subscription: "FREE" | "PREMIUM";
 }
 
 export interface ShortLink {

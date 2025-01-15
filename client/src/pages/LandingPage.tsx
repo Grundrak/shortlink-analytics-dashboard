@@ -170,7 +170,7 @@ export function LandingPage() {
             </p>
           </motion.div>
 
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {pricingPlans.map((plan, index) => (
               <motion.div
                 key={plan.name}

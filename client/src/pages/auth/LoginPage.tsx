@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Link as LinkIcon } from 'lucide-react';
-import { useAuthStore } from '../../store/authStore';
+import { useAuthStore } from '../../stores/authStore';
 import { toast } from 'sonner';
 
 export function LoginPage() {
