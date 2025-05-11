@@ -1,15 +1,20 @@
-interface ApiResponseError {
-  status: number;
-  message: string;
-  data?: unknown;
-}
+import { AxiosError } from "axios";
 
-interface ApiRequestError {
-  response?: ApiResponseError;
+// Only keeping what's actually used in the file
+export interface ApiRequestError extends AxiosError {
+  response?: {
+    data: {
+      message?: string;
+      error?: string;
+      statusCode?: number;
+    };
+    status: number;
+  };
   request?: unknown;
   message?: string;
 }
 
+// Custom API error class
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -21,19 +26,46 @@ export class ApiError extends Error {
   }
 }
 
+// Error handler function
 export const handleApiError = (error: ApiRequestError): never => {
   if (error.response) {
+    // The request was made and the server responded with an error status
+    const errorMessage =
+      error.response.data?.message ||
+      error.response.data?.error ||
+      "An error occurred";
+
     throw new ApiError(
       error.response.status,
-      error.response.message || "An error occurred",
+      errorMessage,
       error.response.data
     );
   } else if (error.request) {
-    throw new ApiError(500, "No response received from server");
+    // The request was made but no response was received
+    throw new ApiError(
+      500,
+      "No response received from server. Please check your internet connection."
+    );
   } else {
+    // Something happened in setting up the request
     throw new ApiError(
       500,
       error.message || "An error occurred while setting up the request"
     );
   }
 };
+
+/* Usage example (don't include this in the actual file):
+import axiosInstance from "./axiosInstance";
+
+export const someApiService = {
+  fetchData: async () => {
+    try {
+      const response = await axiosInstance.get("/some-endpoint");
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error as ApiRequestError);
+    }
+  },
+};
+*/
