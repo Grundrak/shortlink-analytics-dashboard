@@ -14,14 +14,6 @@ export function LoginPage() {
     e.preventDefault();
 
     try {
-      // Mock login - replace with actual API call
-      const user = {
-        id: '1',
-        email,
-        name: 'John Doe',
-        plan: 'FREE' as const,
-        createdAt: new Date().toISOString(),
-      };
 
       login(user);
       toast.success('Successfully logged in!');

@@ -1,95 +1,81 @@
-import  { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 import { LinksTable } from '../../components/links/LinksTable';
-import { LinkFilters } from '../../components/links/LinkFilters';
-import { motion } from 'framer-motion';
-
-const allLinks = [
-  {
-    id: '1',
-    originalUrl: 'https://example.com/very/long/url/that/needs/shortening',
-    shortCode: 'abc123',
-    clicks: 1234,
-    createdAt: '2024-03-10T12:00:00Z',
-    status: 'Active',
-  },
-  {
-    id: '2',
-    originalUrl: 'https://another-example.com/blog/post/1',
-    shortCode: 'xyz789',
-    clicks: 567,
-    createdAt: '2024-03-09T15:30:00Z',
-    status: 'Disabled',
-  },
-  // Add more links as needed...
-];
+import { linkApi } from '../../api/linkApi';
+import { toast } from 'sonner';
 
 export function LinksPage() {
-  const [filteredLinks, setFilteredLinks] = useState(allLinks);
+  const [links, setLinks] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const handleFilterChange = ({ search, dateRange, sort }) => {
-    let filtered = [...allLinks];
-
-    // Filter by search
-    if (search) {
-      filtered = filtered.filter(link =>
-        link.originalUrl.toLowerCase().includes(search.toLowerCase()) ||
-        link.shortCode.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-
-    // Filter by date range
-    const now = new Date();
-    filtered = filtered.filter(link => {
-      const createdAt = new Date(link.createdAt);
-      switch (dateRange) {
-        case 'Last 7 days':
-          return (now - createdAt) / (1000 * 60 * 60 * 24) <= 7;
-        case 'Last 30 days':
-          return (now - createdAt) / (1000 * 60 * 60 * 24) <= 30;
-        case 'Last 3 months':
-          return (now - createdAt) / (1000 * 60 * 60 * 24 * 30) <= 3;
-        case 'All time':
-        default:
-          return true;
+  useEffect(() => {
+    const fetchLinks = async () => {
+      try {
+        setIsLoading(true);
+        const response = await linkApi.getAllLinks();
+        setLinks(response.data);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load links');
+        toast.error('Failed to load links');
+      } finally {
+        setIsLoading(false);
       }
-    });
+    };
 
-    // Sort
-    switch (sort) {
-      case 'Most clicks':
-        filtered.sort((a, b) => b.clicks - a.clicks);
-        break;
-      case 'Newest first':
-        filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        break;
-      case 'Oldest first':
-        filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-        break;
-      case 'Alphabetical':
-        filtered.sort((a, b) => a.originalUrl.localeCompare(b.originalUrl));
-        break;
-      default:
-        break;
+    fetchLinks();
+  }, []);
+
+  const handleDeleteLink = async (shortCode) => {
+    try {
+      await linkApi.deleteLink(shortCode);
+      toast.success('Link deleted successfully');
+      
+      // Refresh the links list
+      setLinks((prevLinks) => 
+        prevLinks.filter(link => link.shortCode !== shortCode)
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete link');
     }
-
-    setFilteredLinks(filtered);
   };
 
   return (
-    <motion.div
-      className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.8 }}
-    >
-      {/* Page Title */}
-      <h1 className="text-2xl font-semibold text-gray-900">Your Links</h1>
+    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-primary">Your Links</h1>
+        <Link
+          to="/links/create"
+          className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+        >
+          <Plus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+          Create Link
+        </Link>
+      </div>
 
-      {/* Filters */}
-      <LinkFilters onFilterChange={handleFilterChange} />
-
-      {/* Links Table */}
-      <LinksTable initialLinks={filteredLinks} />
-    </motion.div>
+      {isLoading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-500">Loading your links...</p>
+        </div>
+      ) : error ? (
+        <div className="text-center py-12 bg-red-50 rounded-lg">
+          <p className="text-red-500">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-primary text-white rounded-md"
+          >
+            Try Again
+          </button>
+        </div>
+      ) : (
+        <LinksTable 
+          links={links} 
+          onDelete={handleDeleteLink} 
+        />
+      )}
+    </div>
   );
 }

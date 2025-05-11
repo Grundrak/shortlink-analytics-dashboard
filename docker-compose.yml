@@ -1,0 +1,48 @@
+version: '3.9'
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: shortlink-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - shortlink-network
+
+  server:
+    build: ./server
+    container_name: shortlink-server
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}" 
+    env_file:
+      - ./server/.env
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+    volumes:
+      - ./server/logs:/usr/src/app/logs
+    networks:
+      - shortlink-network
+
+  client:
+    build: ./client
+    container_name: shortlink-client
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_URL=http://localhost:${PORT:-3000}/api
+    depends_on:
+      - server
+    networks:
+      - shortlink-network
+
+networks:
+  shortlink-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
