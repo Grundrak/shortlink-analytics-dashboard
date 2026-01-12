@@ -1,25 +1,80 @@
-// DashboardStats.jsx
+import { useState, useEffect } from 'react';
 import { Link2, BarChart2, Globe, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
-
-const colors = {
-  primary: '#4F46E5',    // Indigo
-  secondary: '#10B981',  // Emerald Green
-  accent: '#F59E0B',     // Amber
-  dark: '#1F2937',       // Slate Gray
-  light: '#F3F4F6',      // Light Gray
-};
-
-// Sample stats data
-const stats = [
-  { name: 'Total Links', value: '1,234', icon: Link2, change: '+12%' },
-  { name: 'Total Clicks', value: '54.3k', icon: BarChart2, change: '+8%' },
-  { name: 'Active Links', value: '856', icon: Globe, change: '+3%' },
-  { name: 'Unique Visitors', value: '23.1k', icon: Users, change: '+15%' },
-];
+import { analyticsApi } from '../../api/analyticsApi';
+import { toast } from 'sonner';
 
 export function DashboardStats() {
+  const [stats, setStats] = useState([
+    { name: 'Total Links', value: '0', icon: Link2, change: '+0%' },
+    { name: 'Total Clicks', value: '0', icon: BarChart2, change: '+0%' },
+    { name: 'Active Links', value: '0', icon: Globe, change: '+0%' },
+    { name: 'Unique Visitors', value: '0', icon: Users, change: '+0%' },
+  ]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await analyticsApi.getUserAnalyticsSummary();
+        const data = response.data;
+        
+        // Extract comprehensive stats from the new API response
+        const overview = data.overview;
+        
+        setStats([
+          { 
+            name: 'Total Links', 
+            value: overview.totalUrls.toString(), 
+            icon: Link2, 
+            change: '+0%' // Could calculate growth if historical data available
+          },
+          { 
+            name: 'Total Clicks', 
+            value: overview.totalClicks.toLocaleString(), 
+            icon: BarChart2, 
+            change: overview.clicksGrowth || '+0%'
+          },
+          { 
+            name: 'Active Links', 
+            value: overview.activeUrls.toString(), 
+            icon: Globe, 
+            change: '+0%'
+          },
+          { 
+            name: 'Unique Visitors', 
+            value: overview.uniqueVisitors.toLocaleString(), 
+            icon: Users, 
+            change: '+0%'
+          },
+        ]);
+      } catch (err) {
+        console.error('Error fetching dashboard stats:', err);
+        toast.error('Failed to load dashboard statistics');
+        // Keep default values on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="bg-white shadow rounded-lg p-5">
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+              <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
   return (
     <motion.div
       className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4"
@@ -47,7 +102,7 @@ export function DashboardStats() {
         >
           {/* Icon */}
           <div className="flex-shrink-0">
-            <stat.icon className={`h-6 w-6 text-primary`} />
+            <stat.icon className="h-6 w-6 text-indigo-600" />
           </div>
           {/* Content */}
           <div className="ml-4 flex-1">
@@ -57,7 +112,7 @@ export function DashboardStats() {
               <div
                 className={clsx(
                   'ml-2 flex items-baseline text-sm font-semibold',
-                  stat.change.startsWith('+') ? 'text-secondary' : 'text-red-600'
+                  stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'
                 )}
               >
                 {stat.change}

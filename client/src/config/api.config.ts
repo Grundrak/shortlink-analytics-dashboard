@@ -1,5 +1,5 @@
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:4521/api',
   TIMEOUT: 10000,
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000,
@@ -14,7 +14,8 @@ export const API_CONFIG = {
     LINKS: {
       CREATE: '/urls',
       LIST: '/urls',
-      GET: (id: string) => `/urls/${id}`,
+      GET: (id: string) => `/urls/details/${id}`, // Changed to /details/
+      UPDATE: (id: string) => `/urls/${id}`, // Added UPDATE endpoint
       DELETE: (id: string) => `/urls/${id}`,
     },
     ANALYTICS: {

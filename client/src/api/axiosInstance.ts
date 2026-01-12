@@ -1,8 +1,12 @@
 import axios from "axios";
 
+// Debug actual API URL being used
+const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4521/api';
+console.log('API URL being used:', apiUrl);
+
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
-  timeout: 10000,
+  baseURL: apiUrl,
+  timeout: 30000, // Increase timeout to 30 seconds
   headers: {
     "Content-Type": "application/json",
   },
